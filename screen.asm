@@ -1,197 +1,4 @@
-; 10 SYS (4096)
-*=$0801
-          BYTE           $0E, $08, $0A, $00, $9E, $20, $28,  $34, $30, $39, $36, $29, $00, $00, $00
-*=$1000
-;helpful labels
-CLEAR     = $E544
-GETIN     = $FFE4
-CHROUT    = $FFD2
-SCNKEY    = $FF9F
-PLOT      = $E50A
-STROUT    = $AB1E
-PLAYER    = #88
-PLAYER_ROW_I = $02
-PLAYER_COL_I = $03
-PLAYERPD  = $00         ; player prev dir (1 up, 2 left, 3 right, 4 down)
-rowL = $05
-rowH = $06
-GAMESPEED = #100
-GHOSTX    = #01
-GHOSTY    = #01
-SCRN_START = $0400
-;SCRN_OFFSET = $03
-WALL      = #102
 
-start
-          lda #00
-          sta PLAYERPD
-          lda #13
-          sta PLAYER_COL_I
-          lda #11
-          sta PLAYER_ROW_I
-          jsr drwscrn
-          clc
-DRWPLYR   
-          ldx PLAYER_ROW_I
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          lda PLAYER
-          sta (rowL),Y
-SCAN      
-          JSR SCNKEY    ; get key
-          JSR GETIN     ; put key in A
-          CMP #87
-          BEQ JMP_MVPLYR_UP
-          CMP #83
-          BEQ JMP_MVPLYR_DN
-          CMP #65
-          BEQ JMP_MVPLYR_LF
-          CMP #68
-          BEQ JMP_MVPLYR_RT
-          CMP #81       ; end if Q clicked
-          BEQ END
-          LDA PLAYERPD
-          CMP #01
-          BEQ JMP_MVPLYR_UP
-          CMP #02
-          BEQ JMP_MVPLYR_LF
-          CMP #03
-          BEQ JMP_MVPLYR_RT
-          CMP #04
-          BEQ JMP_MVPLYR_DN
-          JMP SCAN
-JMP_MVPLYR_UP
-          JMP MVPLYR_UP
-JMP_MVPLYR_DN
-          JMP MVPLYR_DN
-JMP_MVPLYR_LF
-          JMP MVPLYR_LF
-JMP_MVPLYR_RT
-          JMP MVPLYR_RT
-END       
-          JSR CLEAR
-          RTS
-
-CLRPLYR   
-          ldx PLAYER_ROW_I
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          lda #32
-          sta (rowL),Y
-          rts
-DELAY
-          LDA #$00
-          STA $BB
-          STA $BC 
-DLY
-          INC $BB
-          BNE DLY 
-          INC $BC
-          LDA $BC
-          CMP GAMESPEED
-          BNE DLY 
-          RTS     
-MVPLYR_UP
-          ; OK move up ?
-          ldx PLAYER_ROW_I
-          dex
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          lda WALL
-          cmp (rowL),Y
-          bne MVPLYR_UP_OK               
-          JMP SCAN
-MVPLYR_UP_OK
-          jsr DELAY
-          jsr CLRPLYR
-          lda PLAYER_ROW_I
-          sec
-          sbc #1
-          sta PLAYER_ROW_I
-          lda #01
-          sta PLAYERPD
-          JMP DRWPLYR
-MVPLYR_DN
-          ; OK move down ?
-          ldx PLAYER_ROW_I
-          inx
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          lda WALL
-          cmp (rowL),Y
-          bne MVPLYR_DN_OK               
-          JMP SCAN
-MVPLYR_DN_OK
-          jsr DELAY
-          jsr CLRPLYR
-          lda PLAYER_ROW_I
-          clc
-          adc #1
-          sta PLAYER_ROW_I
-          lda #04
-          sta PLAYERPD
-          JMP DRWPLYR
-MVPLYR_LF
-          ; OK move left ?
-          ldx PLAYER_ROW_I
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          dey
-          lda WALL
-          cmp (rowL),Y
-          bne MVPLYR_LF_OK               
-          JMP SCAN
-MVPLYR_LF_OK
-          jsr DELAY
-          jsr CLRPLYR
-          lda PLAYER_COL_I
-          sec
-          sbc #1
-          sta PLAYER_COL_I
-          lda #02
-          sta PLAYERPD
-          JMP DRWPLYR
-MVPLYR_RT
-          ; OK move right ?
-          ldx PLAYER_ROW_I
-          lda ScreenRowTableDataL,x
-          sta rowL
-          lda ScreenRowTableDataH,x
-          sta rowH
-          ldy PLAYER_COL_I
-          iny
-          lda WALL
-          cmp (rowL),Y
-          bne MVPLYR_RT_OK 
-          JMP SCAN
-MVPLYR_RT_OK
-          jsr DELAY
-          jsr CLRPLYR
-          lda PLAYER_COL_I
-          clc
-          adc #1
-          sta PLAYER_COL_I
-          lda #03
-          sta PLAYERPD
-          JMP DRWPLYR
-SCRNROWS  
-          byte $0400
-drwscrn
           lda            #5        ; color code for green
           sta            $0286     ; color code for the current cursor color
           jsr            CLEAR     ; clear screen
@@ -1545,6 +1352,19 @@ drwscrn
           sta            $07D9
           lda            #102
           sta            $07DA
+
+          lda            #19
+          sta            $0445
+          lda            #03
+          sta            $0446
+          lda            #15
+          sta            $0447
+          lda            #18
+          sta            $0448
+          lda            #05
+          sta            $0449
+          lda            #58
+          sta            $044A
           rts
 ;======================================================== 
 ScreenRowTableDataL 
